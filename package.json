@@ -1,0 +1,20 @@
+{
+  "name": "research-toolkit-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local MCP server exposing search_github and fetch_page tools for AI editors/CLIs.",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "test": "echo \"no unit tests yet - see docs/ROADMAP.md Phase 3 (Harness)\""
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "@types/node": "^24.0.0"
+  }
+}

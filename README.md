@@ -2,7 +2,7 @@
 
 > A local MCP server that lets AI editors (Cursor, Claude Code, etc.) search GitHub and fetch web pages directly — no need to leave the editor.
 
-**Status: rewrite in progress.** Rebuilding in TypeScript. No code yet.
+**Status: rewrite in progress.** Rebuilding in TypeScript. Project scaffolding is in place (`package.json`, `tsconfig.json`, `src/core/`, `src/mcp/tools/`); the server and tools themselves are not implemented yet.
 
 ---
 
@@ -42,4 +42,4 @@ MIT.
 
 ---
 
-*Started 2026-06-28. Rewrite to TypeScript started 2026-07-08.*
+*Started 2026-06-28. Rewrite to TypeScript started 2026-07-08. Scaffolding added 2026-07-12.*
