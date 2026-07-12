@@ -1,6 +1,10 @@
 # Design docs (kept local-only, not pushed to the public repo)
 docs/
 
+# AI working-style/memory notes (local-only, not pushed to the public repo)
+CLAUDE.md
+.cursorrules
+
 # Python
 __pycache__/
 *.py[cod]
