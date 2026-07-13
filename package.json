@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "test": "echo \"no unit tests yet - see docs/ROADMAP.md Phase 3 (Harness)\""
+    "test": "npm run build && node --test \"tests/**/*.test.js\""
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
