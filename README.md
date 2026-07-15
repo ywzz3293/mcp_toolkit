@@ -1,23 +1,23 @@
-# Personal Research MCP
+# research-toolkit-mcp
 
-> A local MCP server that lets AI editors (Cursor, Claude Code, etc.) search GitHub and fetch web pages directly — no need to leave the editor.
+> A local MCP server that lets AI editors (Cursor, Claude Code, Codex CLI) search GitHub and fetch web pages directly — no need to leave the editor.
 
-**Status: rewrite in progress.** Rebuilding in TypeScript. Project scaffolding is in place (`package.json`, `tsconfig.json`, `src/core/`, `src/mcp/tools/`); the server and tools themselves are not implemented yet.
+**Status: Phase 1 complete.** TypeScript, stdio transport, two tools, tested and connected to all three CLIs.
 
 ---
 
-## What it does (target behavior, being reimplemented)
+## What it does
 
 Two MCP tools, callable by any MCP-compatible client over stdio:
 
 ```
-AI editor (Cursor / Claude Code / ...)
+AI editor (Cursor / Claude Code / Codex CLI)
     │
     ▼
-Personal Research MCP (stdio)
+research-toolkit-mcp (stdio)
     │
-    ├── search_github(query)   → GitHub REST API
-    └── fetch_page(url)         → Jina Reader
+    ├── search_github_repos(query, language?, max_results=5)   → GitHub REST API
+    └── fetch_page(url)                                         → Jina Reader
 ```
 
 **Not**: a knowledge base / notes search, a vector DB, a web UI, a RAG pipeline, or a hosted service. Pure local stdio process.
@@ -26,13 +26,26 @@ Personal Research MCP (stdio)
 
 ## Tools
 
-### `search_github(query, language?, max_results=5)`
+### `search_github_repos(query, language?, max_results=5)`
 
-Searches public GitHub repos via `/search/repositories`. Returns `{results: [...], total_count}`. Empty results return `[]`, not an error. Requires a GitHub token (`public_repo` scope is enough).
+Searches public GitHub repos via `/search/repositories`. Returns `{results: [...], total_count}`, with a `readme_url` on each result for chaining into `fetch_page`. Empty results return `[]`, not an error. Requires a GitHub token (`public_repo` scope is enough).
 
 ### `fetch_page(url)`
 
 Fetches a page via Jina Reader (`r.jina.ai`) and returns clean text. No API key needed.
+
+---
+
+## Setup
+
+1. `npm install`
+2. Copy `.env.example` to `.env` and fill in `GITHUB_TOKEN`
+3. `npm run build`
+4. `npm test` (16 unit tests, no network calls)
+
+## Connecting a CLI
+
+See [docs/CLI_SETUP.md](docs/CLI_SETUP.md) for Cursor, Claude Code, and Codex CLI configuration — same `dist/server.js`, no code changes needed per client.
 
 ---
 
@@ -42,4 +55,4 @@ MIT.
 
 ---
 
-*Started 2026-06-28. Rewrite to TypeScript started 2026-07-08. Scaffolding added 2026-07-12.*
+*Started 2026-06-28. Rewrite to TypeScript started 2026-07-08. Phase 1 (multi-CLI MCP server) completed 2026-07-15.*
