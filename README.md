@@ -45,7 +45,7 @@ Fetches a page via Jina Reader (`r.jina.ai`) and returns clean text. No API key 
 
 ## Connecting a CLI
 
-See [docs/CLI_SETUP.md](docs/CLI_SETUP.md) for Cursor, Claude Code, and Codex CLI configuration — same `dist/server.js`, no code changes needed per client.
+See [CLI_SETUP.md](CLI_SETUP.md) for Cursor, Claude Code, and Codex CLI configuration — same `dist/server.js`, no code changes needed per client.
 
 ---
 
