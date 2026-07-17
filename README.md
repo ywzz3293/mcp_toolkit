@@ -2,7 +2,7 @@
 
 > A local MCP server that lets AI editors (Cursor, Claude Code, Codex CLI) search GitHub and fetch web pages directly — no need to leave the editor.
 
-**Status: Phase 1 complete.** TypeScript, stdio transport, two tools, tested and connected to all three CLIs.
+**Status: Phase 1 complete.** TypeScript, stdio transport, two tools, tested and connected to all three CLIs. Plus a Claude Code subagent that chains both tools into a research report.
 
 ---
 
@@ -33,6 +33,25 @@ Searches public GitHub repos via `/search/repositories`. Returns `{results: [...
 ### `fetch_page(url)`
 
 Fetches a page via Jina Reader (`r.jina.ai`) and returns clean text. No API key needed.
+
+---
+
+## Subagent: `research-assistant` (Claude Code)
+
+A Claude Code subagent (`.claude/agents/research-assistant.md`) that chains the two tools above into a structured research report — no manual back-and-forth.
+
+```
+research question
+    │
+    ▼
+research-assistant subagent (isolated context; tools: search_github_repos, fetch_page only)
+    │
+    ├── search_github_repos × 1-3   (keyword groups, optional language filter)
+    ├── fetch_page × ~3             (read README of top matches)
+    └── → report: overview, per-repo notes, comparison, recommendation, sources
+```
+
+Invoke explicitly ("use the research-assistant subagent to research: ...") or let Claude Code auto-delegate based on the agent's description. Project-level, so it's only available when working in this repo with Claude Code.
 
 ---
 
