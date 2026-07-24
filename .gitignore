@@ -15,6 +15,9 @@ build/
 # Node
 node_modules/
 
+# Local SQLite cache + JSONL logs (Phase 2 Step 10/11)
+data/
+
 # Environment
 .env
 *.env.local
