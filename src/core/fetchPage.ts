@@ -1,15 +1,21 @@
+import { retry, RetryableError } from "./retry.js";
+
 const JINA_READER_BASE = "https://r.jina.ai";
 const DEFAULT_TIMEOUT_MS = 15_000;
+const DEFAULT_MAX_CONTENT_LENGTH = 25_000;
+const RETRY_OPTIONS = { attempts: 3, delays: [500, 1500] };
 
 export interface FetchPageResult {
   url: string;
   title: string | null;
   content: string;
   contentLength: number;
+  truncated: boolean;
 }
 
 export interface FetchPageOptions {
   timeoutMs?: number;
+  maxContentLength?: number;
 }
 
 function validateUrl(url: string): void {
@@ -39,15 +45,7 @@ function parseJinaResponse(raw: string): { title: string | null; content: string
   return { title, content };
 }
 
-export async function fetchPage(
-  url: string,
-  options: FetchPageOptions = {},
-): Promise<FetchPageResult> {
-  const { timeoutMs = DEFAULT_TIMEOUT_MS } = options;
-
-  validateUrl(url);
-
-  const readerUrl = `${JINA_READER_BASE}/${url}`;
+async function attemptFetch(url: string, readerUrl: string, timeoutMs: number): Promise<string> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -62,19 +60,38 @@ export async function fetchPage(
     });
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
-      throw new Error(`Request to ${url} timed out after ${timeoutMs}ms.`);
+      throw new RetryableError(`Request to ${url} timed out after ${timeoutMs}ms.`);
     }
     const message = err instanceof Error ? err.message : String(err);
-    throw new Error(`Network error while fetching ${url}: ${message}`);
+    throw new RetryableError(`Network error while fetching ${url}: ${message}`);
   } finally {
     clearTimeout(timeout);
   }
 
+  if (response.status === 429 || response.status === 403 || response.status >= 500) {
+    throw new RetryableError(`Failed to fetch page (HTTP ${response.status}): ${url}`);
+  }
   if (!response.ok) {
     throw new Error(`Failed to fetch page (HTTP ${response.status}): ${url}`);
   }
 
-  const raw = (await response.text()).trim();
+  return (await response.text()).trim();
+}
+
+export async function fetchPage(
+  url: string,
+  options: FetchPageOptions = {},
+): Promise<FetchPageResult> {
+  const {
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    maxContentLength = DEFAULT_MAX_CONTENT_LENGTH,
+  } = options;
+
+  validateUrl(url);
+
+  const readerUrl = `${JINA_READER_BASE}/${url}`;
+
+  const raw = await retry(() => attemptFetch(url, readerUrl, timeoutMs), RETRY_OPTIONS);
 
   const upstreamError = raw.match(/^Warning: Target URL returned error (\d+):\s*(.*)$/m);
   if (upstreamError) {
@@ -83,5 +100,8 @@ export async function fetchPage(
 
   const { title, content } = parseJinaResponse(raw);
 
-  return { url, title, content, contentLength: content.length };
+  const truncated = content.length > maxContentLength;
+  const finalContent = truncated ? content.slice(0, maxContentLength) : content;
+
+  return { url, title, content: finalContent, contentLength: finalContent.length, truncated };
 }

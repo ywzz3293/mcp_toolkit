@@ -1,3 +1,5 @@
+import { retry, RetryableError } from "./retry.js";
+
 export interface GithubRepoResult {
   fullName: string;
   description: string | null;
@@ -19,6 +21,7 @@ export interface SearchGithubOptions {
 }
 
 const DEFAULT_TIMEOUT_MS = 15_000;
+const RETRY_OPTIONS = { attempts: 3, delays: [500, 1500] };
 
 interface GithubSearchResponseItem {
   full_name: string;
@@ -30,6 +33,55 @@ interface GithubSearchResponseItem {
 interface GithubSearchResponse {
   total_count: number;
   items: GithubSearchResponseItem[];
+}
+
+async function attemptSearch(
+  url: URL,
+  token: string,
+  timeoutMs: number,
+): Promise<GithubSearchResponse> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+        "User-Agent": "research-toolkit-mcp",
+      },
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new RetryableError(`GitHub search timed out after ${timeoutMs}ms.`);
+    }
+    const message = err instanceof Error ? err.message : String(err);
+    throw new RetryableError(`Network error while searching GitHub: ${message}`);
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (response.status === 401) {
+    throw new Error(
+      "GitHub rejected the token (401 Unauthorized). Check that GITHUB_TOKEN is valid.",
+    );
+  }
+  if (response.status === 403 || response.status === 429) {
+    throw new RetryableError(
+      `GitHub API rate limit or permission error (HTTP ${response.status}). ` +
+        "Wait a bit and try again, or check the token's scopes.",
+    );
+  }
+  if (response.status >= 500) {
+    throw new RetryableError(`GitHub search failed with HTTP ${response.status}`);
+  }
+  if (!response.ok) {
+    throw new Error(`GitHub search failed with HTTP ${response.status}`);
+  }
+
+  return (await response.json()) as GithubSearchResponse;
 }
 
 export async function searchGithub(
@@ -47,45 +99,7 @@ export async function searchGithub(
   url.searchParams.set("q", q);
   url.searchParams.set("per_page", String(maxResults));
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/vnd.github+json",
-        "User-Agent": "research-toolkit-mcp",
-      },
-      signal: controller.signal,
-    });
-  } catch (err) {
-    if (err instanceof Error && err.name === "AbortError") {
-      throw new Error(`GitHub search timed out after ${timeoutMs}ms.`);
-    }
-    const message = err instanceof Error ? err.message : String(err);
-    throw new Error(`Network error while searching GitHub: ${message}`);
-  } finally {
-    clearTimeout(timeout);
-  }
-
-  if (response.status === 401) {
-    throw new Error(
-      "GitHub rejected the token (401 Unauthorized). Check that GITHUB_TOKEN is valid.",
-    );
-  }
-  if (response.status === 403 || response.status === 429) {
-    throw new Error(
-      `GitHub API rate limit or permission error (HTTP ${response.status}). ` +
-        "Wait a bit and try again, or check the token's scopes.",
-    );
-  }
-  if (!response.ok) {
-    throw new Error(`GitHub search failed with HTTP ${response.status}`);
-  }
-
-  const data = (await response.json()) as GithubSearchResponse;
+  const data = await retry(() => attemptSearch(url, token, timeoutMs), RETRY_OPTIONS);
 
   const results: GithubRepoResult[] = data.items.map((item) => ({
     fullName: item.full_name,
