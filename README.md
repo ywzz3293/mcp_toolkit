@@ -60,11 +60,29 @@ Invoke explicitly ("use the research-assistant subagent to research: ...") or le
 1. `npm install`
 2. Copy `.env.example` to `.env` and fill in `GITHUB_TOKEN`
 3. `npm run build`
-4. `npm test` (16 unit tests, no network calls)
+4. `npm test` (unit tests, no network calls)
 
 ## Connecting a CLI
 
 See [CLI_SETUP.md](CLI_SETUP.md) for Cursor, Claude Code, and Codex CLI configuration — same `dist/server.js`, no code changes needed per client.
+
+## Manual smoke test
+
+If you want to sanity-check the server is actually working end-to-end (e.g. after connecting a new CLI, or if something feels off), use a known-stable query instead of picking a random one:
+
+```
+search_github_repos(query: "modelcontextprotocol/typescript-sdk")
+```
+
+The top result should be `modelcontextprotocol/typescript-sdk` (an exact repo-name match always ranks first). Then:
+
+```
+fetch_page(url: <that result's readme_url>)
+```
+
+should return several thousand characters of real README content, not an empty/short stub.
+
+**Important**: always pass the result's `readme_url` field to `fetch_page`, not its `url` field. `readme_url` points at the raw file on `raw.githubusercontent.com`, which works reliably. `url` points at the repo's normal `github.com` web page, which Jina Reader cannot always fetch (GitHub's site has bot protection that blocks it, returning an HTTP 403) — that's a difference in the *target site*, not a bug in this server.
 
 ---
 
