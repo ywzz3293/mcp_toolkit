@@ -1,6 +1,6 @@
 import { retry, RetryableError } from "./retry.js";
 
-const JINA_READER_BASE = "https://r.jina.ai";
+const JINA_READER_BASE = process.env.JINA_READER_BASE_URL ?? "https://r.jina.ai";
 const DEFAULT_TIMEOUT_MS = 15_000;
 const DEFAULT_MAX_CONTENT_LENGTH = 25_000;
 const RETRY_OPTIONS = { attempts: 3, delays: [500, 1500] };

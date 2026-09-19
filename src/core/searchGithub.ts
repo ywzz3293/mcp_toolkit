@@ -22,6 +22,7 @@ export interface SearchGithubOptions {
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 const RETRY_OPTIONS = { attempts: 3, delays: [500, 1500] };
+const GITHUB_API_BASE = process.env.GITHUB_API_BASE_URL ?? "https://api.github.com";
 
 interface GithubSearchResponseItem {
   full_name: string;
@@ -95,7 +96,7 @@ export async function searchGithub(
   }
 
   const q = language ? `${query} language:${language}` : query;
-  const url = new URL("https://api.github.com/search/repositories");
+  const url = new URL(`${GITHUB_API_BASE}/search/repositories`);
   url.searchParams.set("q", q);
   url.searchParams.set("per_page", String(maxResults));
 

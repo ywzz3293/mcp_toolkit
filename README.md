@@ -2,7 +2,7 @@
 
 > A local MCP server that lets AI editors (Cursor, Claude Code, Codex CLI) search GitHub and fetch web pages directly — no need to leave the editor.
 
-**Status: Phase 1 complete.** TypeScript, stdio transport, two tools, tested and connected to all three CLIs. Plus a Claude Code subagent that chains both tools into a research report.
+**Status: Phase 2 baseline complete.** TypeScript, stdio transport, two tools, SQLite exact-match cache, unit tested, and connected to Cursor / Claude Code / Codex CLI. A Claude Code subagent can chain both tools into a research report.
 
 ---
 
@@ -20,7 +20,9 @@ research-toolkit-mcp (stdio)
     └── fetch_page(url)                                         → Jina Reader
 ```
 
-**Not**: a knowledge base / notes search, a vector DB, a web UI, a RAG pipeline, or a hosted service. Pure local stdio process.
+**Current scope does not include** a knowledge base, notes/workspace search, a vector DB, a web UI, a semantic RAG pipeline, or a hosted service. It is a local stdio process. Those are possible future directions only if real usage justifies them; they are not part of the current product contract.
+
+**Version note:** the historical demo baseline is tagged `v0.2-demo`, while the package/server still report `0.1.0`. There is no current demo commitment; the mismatch is a known maintenance item for a future small work session.
 
 ---
 
