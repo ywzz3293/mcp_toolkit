@@ -94,7 +94,9 @@ Observed results on 2026-09-20:
 
 - Natural request: Codex chose built-in web search in both runs (before and after the scoped approval override); it did not call the Registry tool.
 - Explicit diagnostic: initially blocked by `MCP tool call requires approval, but approval policy is never`; with the single-tool override, the call completed and returned 5 Registry candidates.
-- Therefore the Codex → MCP → Registry connection works, but autonomous preference for this tool is **not demonstrated**. Do not count the explicit diagnostic as an autonomous-selection pass.
+- These CLI trials verified connectivity but did not demonstrate autonomous selection. Do not count the explicit diagnostic as an autonomous-selection pass.
+
+Later interactive observation on 2026-09-20: the user repeated the same natural-language request in a connected Codex conversation. The agent selected `search_mcp_servers` with `query="filesystem"` and `max_results=3`, and received 3 candidates, source metadata, and limitations; it also used web research. This was a separate interactive observation, not a rerun of the CLI command above. It satisfied the remaining Phase 4 selection criterion, and the user signed off the phase. Tool preference is not guaranteed, and the final recommendation was supported by web documentation rather than one of those three Registry candidates.
 
 See the official [non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode) and [MCP configuration](https://learn.chatgpt.com/docs/extend/mcp?surface=cli) documentation for the flags and per-tool approval settings.
 

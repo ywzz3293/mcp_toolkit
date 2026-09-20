@@ -2,7 +2,7 @@
 
 > A local MCP server that lets AI editors (Cursor, Claude Code, Codex CLI) search GitHub, fetch web pages, and discover candidate MCP servers in the official Registry.
 
-**Status: Phase 4 Registry-search learning slice in progress.** TypeScript, stdio transport, three tools, SQLite exact-match cache, unit tested, and connected to Cursor / Claude Code / Codex CLI. The new Registry path has local stdio e2e coverage and a repeatable real-network smoke test.
+**Status: Phase 4 Registry-search learning slice completed and signed off on 2026-09-20.** TypeScript, stdio transport, three tools, SQLite exact-match cache, unit tested, and connected to Cursor / Claude Code / Codex CLI. The Registry path has local stdio e2e coverage and a repeatable real-network smoke test. Phase 5 has not started.
 
 ---
 
@@ -85,7 +85,7 @@ npm run smoke:registry
 
 The script asks for `filesystem`, prints a compact candidate list, uses an in-memory cache and temporary log, and cleans up after itself. Exact candidates are intentionally not hard-coded because Registry contents change.
 
-For a real AI client, use the [temporary Codex example](CLI_SETUP.md#phase-4-example-temporary-connection-no-global-config-edits). On 2026-09-20, an explicit Codex tool call returned 5 Registry candidates, while the unmodified natural-language request chose built-in web search instead. Connectivity is verified; autonomous selection of this tool is not yet demonstrated.
+For a real AI client, use the [temporary Codex example](CLI_SETUP.md#phase-4-example-temporary-connection-no-global-config-edits). On 2026-09-20, an explicit Codex CLI tool call returned 5 Registry candidates; two natural-language CLI trials chose web search only. In a later interactive Codex conversation, the same natural-language request prompted a `search_mcp_servers` call with `query="filesystem"`, `max_results=3`, returning 3 candidates alongside web research. This demonstrates autonomous selection in that conversation, not guaranteed tool preference or that the final recommendation came from the Registry results. Phase 4 was then signed off by the user.
 
 For the original GitHub → README chain, use a known-stable query instead of picking a random one:
 
