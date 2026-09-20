@@ -75,7 +75,7 @@ async function attemptRequest(url: URL, timeoutMs: number, context: string): Pro
     response = await fetch(url, {
       headers: {
         Accept: "application/json",
-        "User-Agent": "research-toolkit-mcp",
+        "User-Agent": "mcp-scout",
       },
       signal: controller.signal,
     });

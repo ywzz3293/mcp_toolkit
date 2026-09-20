@@ -50,7 +50,7 @@ async function attemptSearch(
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/vnd.github+json",
-        "User-Agent": "research-toolkit-mcp",
+        "User-Agent": "mcp-scout",
       },
       signal: controller.signal,
     });

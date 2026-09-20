@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "research-toolkit": {
+    "mcp-scout": {
       "command": "node",
       "args": [".../mcp_toolkit/dist/server.js"],
       "env": {

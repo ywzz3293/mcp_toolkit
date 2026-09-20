@@ -8,8 +8,8 @@ const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const AGENT_PATH = join(REPO_ROOT, ".claude", "agents", "research-assistant.md");
 
 const ALLOWED_TOOLS = [
-  "mcp__research-toolkit__search_github_repos",
-  "mcp__research-toolkit__fetch_page",
+  "mcp__mcp-scout__search_github_repos",
+  "mcp__mcp-scout__fetch_page",
 ];
 
 function parseFrontmatter(content) {
@@ -28,7 +28,7 @@ function parseFrontmatter(content) {
   };
 }
 
-test("research-assistant tools whitelist contains exactly the two research-toolkit tools", () => {
+test("research-assistant tools whitelist contains exactly the two mcp-scout tools", () => {
   const content = readFileSync(AGENT_PATH, "utf8");
   const { tools } = parseFrontmatter(content);
 

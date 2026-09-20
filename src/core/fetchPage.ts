@@ -53,7 +53,7 @@ async function attemptFetch(url: string, readerUrl: string, timeoutMs: number): 
   try {
     response = await fetch(readerUrl, {
       headers: {
-        "User-Agent": "research-toolkit-mcp",
+        "User-Agent": "mcp-scout",
         Accept: "text/plain",
       },
       signal: controller.signal,

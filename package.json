@@ -1,13 +1,14 @@
 {
-  "name": "research-toolkit-mcp",
+  "name": "mcp-scout",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Local MCP server exposing search_github and fetch_page tools for AI editors/CLIs.",
+  "description": "Local MCP server for discovering MCP Registry candidates, searching GitHub, and fetching web pages.",
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "test": "npm run build && node --test \"tests/**/*.test.js\""
+    "test": "npm run build && node --test \"tests/**/*.test.js\"",
+    "smoke:registry": "npm run build && node scripts/smokeRegistry.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

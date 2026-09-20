@@ -1,7 +1,7 @@
 ---
 name: research-assistant
 description: Use this agent when asked to research a technical topic, find relevant GitHub projects, or produce a research report. Takes a research question, searches GitHub, reads top READMEs, and returns a structured summary.
-tools: mcp__research-toolkit__search_github_repos, mcp__research-toolkit__fetch_page
+tools: mcp__mcp-scout__search_github_repos, mcp__mcp-scout__fetch_page
 model: sonnet
 ---
 

@@ -1,23 +1,24 @@
-# research-toolkit-mcp
+# mcp-scout
 
-> A local MCP server that lets AI editors (Cursor, Claude Code, Codex CLI) search GitHub and fetch web pages directly — no need to leave the editor.
+> A local MCP server that lets AI editors (Cursor, Claude Code, Codex CLI) search GitHub, fetch web pages, and discover candidate MCP servers in the official Registry.
 
-**Status: Phase 2 baseline complete.** TypeScript, stdio transport, two tools, SQLite exact-match cache, unit tested, and connected to Cursor / Claude Code / Codex CLI. A Claude Code subagent can chain both tools into a research report.
+**Status: Phase 4 Registry-search learning slice in progress.** TypeScript, stdio transport, three tools, SQLite exact-match cache, unit tested, and connected to Cursor / Claude Code / Codex CLI. The new Registry path has local stdio e2e coverage and a repeatable real-network smoke test.
 
 ---
 
 ## What it does
 
-Two MCP tools, callable by any MCP-compatible client over stdio:
+Three MCP tools, callable by any MCP-compatible client over stdio:
 
 ```
 AI editor (Cursor / Claude Code / Codex CLI)
     │
     ▼
-research-toolkit-mcp (stdio)
+mcp-scout (stdio)
     │
     ├── search_github_repos(query, language?, max_results=5)   → GitHub REST API
-    └── fetch_page(url)                                         → Jina Reader
+    ├── fetch_page(url)                                         → Jina Reader
+    └── search_mcp_servers(query, max_results=5)                → Official MCP Registry
 ```
 
 **Current scope does not include** a knowledge base, notes/workspace search, a vector DB, a web UI, a semantic RAG pipeline, or a hosted service. It is a local stdio process. Those are possible future directions only if real usage justifies them; they are not part of the current product contract.
@@ -35,6 +36,12 @@ Searches public GitHub repos via `/search/repositories`. Returns `{results: [...
 ### `fetch_page(url)`
 
 Fetches a page via Jina Reader (`r.jina.ai`) and returns clean text. No API key needed.
+
+### `search_mcp_servers(query, max_results=5)`
+
+Searches the official MCP Registry for latest server versions whose names contain the supplied keyword. The tool description tells an AI agent to translate a capability request into short keywords such as `filesystem`, `browser`, or `postgres`. Results include Registry identity, repository, package/remote metadata, source URL, and an explicit limitation.
+
+This is candidate discovery, not semantic search, installation, comparison, or a security review. It does not modify MCP client configuration or run discovered servers. No API key is required for the public Registry read API.
 
 ---
 
@@ -70,7 +77,17 @@ See [CLI_SETUP.md](CLI_SETUP.md) for Cursor, Claude Code, and Codex CLI configur
 
 ## Manual smoke test
 
-If you want to sanity-check the server is actually working end-to-end (e.g. after connecting a new CLI, or if something feels off), use a known-stable query instead of picking a random one:
+To exercise the built MCP server over stdio against the real official Registry:
+
+```
+npm run smoke:registry
+```
+
+The script asks for `filesystem`, prints a compact candidate list, uses an in-memory cache and temporary log, and cleans up after itself. Exact candidates are intentionally not hard-coded because Registry contents change.
+
+For a real AI client, use the [temporary Codex example](CLI_SETUP.md#phase-4-example-temporary-connection-no-global-config-edits). On 2026-09-20, an explicit Codex tool call returned 5 Registry candidates, while the unmodified natural-language request chose built-in web search instead. Connectivity is verified; autonomous selection of this tool is not yet demonstrated.
+
+For the original GitHub → README chain, use a known-stable query instead of picking a random one:
 
 ```
 search_github_repos(query: "modelcontextprotocol/typescript-sdk")

@@ -29,10 +29,46 @@ function textPayload(result) {
   return JSON.parse(block.text);
 }
 
-test("stdio server calls both tools through a local fake upstream", { timeout: 15_000 }, async () => {
-  const requests = { github: 0, jina: 0 };
+test("stdio server lists and calls all registered tools through local fake upstreams", { timeout: 15_000 }, async () => {
+  const requests = { github: 0, jina: 0, registry: 0 };
   const upstream = createServer((request, response) => {
     const url = request.url ?? "";
+
+    if (url.startsWith("/v0.1/servers?")) {
+      requests.registry += 1;
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(
+        JSON.stringify({
+          servers: [
+            {
+              server: {
+                name: "io.fixture/filesystem",
+                title: "Fixture Filesystem",
+                description: "Filesystem MCP returned by the local Registry fixture",
+                version: "1.0.0",
+                repository: {
+                  url: "https://github.com/fixture/filesystem-mcp",
+                  source: "github",
+                },
+                packages: [
+                  {
+                    registryType: "npm",
+                    identifier: "@fixture/filesystem-mcp",
+                    version: "1.0.0",
+                    transport: { type: "stdio" },
+                  },
+                ],
+              },
+              _meta: {
+                "io.modelcontextprotocol.registry/official": { status: "active" },
+              },
+            },
+          ],
+          metadata: { count: 1 },
+        }),
+      );
+      return;
+    }
 
     if (url.startsWith("/search/repositories")) {
       requests.github += 1;
@@ -66,7 +102,7 @@ test("stdio server calls both tools through a local fake upstream", { timeout: 1
     response.end(`Unexpected test request: ${url}`);
   });
 
-  const tempDirectory = await mkdtemp(join(tmpdir(), "research-toolkit-e2e-"));
+  const tempDirectory = await mkdtemp(join(tmpdir(), "mcp-scout-e2e-"));
   let client;
 
   try {
@@ -84,14 +120,22 @@ test("stdio server calls both tools through a local fake upstream", { timeout: 1
         GITHUB_TOKEN: "e2e-placeholder-token",
         GITHUB_API_BASE_URL: upstreamBase,
         JINA_READER_BASE_URL: upstreamBase,
+        MCP_REGISTRY_BASE_URL: upstreamBase,
         CACHE_DB_PATH: ":memory:",
         LOG_FILE_PATH: join(tempDirectory, "toolkit.log"),
       },
       stderr: "pipe",
     });
 
-    client = new Client({ name: "research-toolkit-e2e", version: "1.0.0" });
+    client = new Client({ name: "mcp-scout-e2e", version: "1.0.0" });
     await client.connect(transport);
+    assert.equal(client.getServerVersion()?.name, "mcp-scout");
+
+    const listedTools = await client.listTools();
+    assert.deepEqual(
+      listedTools.tools.map((tool) => tool.name).sort(),
+      ["fetch_page", "search_github_repos", "search_mcp_servers"],
+    );
 
     const searchResult = textPayload(
       await client.callTool({
@@ -112,7 +156,20 @@ test("stdio server calls both tools through a local fake upstream", { timeout: 1
     assert.equal(pageResult.title, "E2E Fixture Article");
     assert.equal(pageResult.content, "Local upstream content for the stdio test.");
 
-    assert.deepEqual(requests, { github: 1, jina: 1 });
+    const mcpSearchResult = textPayload(
+      await client.callTool({
+        name: "search_mcp_servers",
+        arguments: { query: "filesystem", max_results: 1 },
+      }),
+    );
+    assert.equal(mcpSearchResult.search_mode, "registry_name_substring");
+    assert.equal(mcpSearchResult.result_count, 1);
+    assert.equal(mcpSearchResult.candidates[0].name, "io.fixture/filesystem");
+    assert.equal(mcpSearchResult.candidates[0].status, "active");
+    assert.equal(mcpSearchResult.candidates[0].packages[0].registryType, "npm");
+    assert.match(mcpSearchResult.limitation, /not installed|not.*security/i);
+
+    assert.deepEqual(requests, { github: 1, jina: 1, registry: 1 });
   } finally {
     if (client) {
       await client.close().catch(() => {});
