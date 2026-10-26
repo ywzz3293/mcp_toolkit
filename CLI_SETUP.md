@@ -4,7 +4,7 @@ All three CLIs connect to the same `dist/server.js`; nothing under `src/` needs 
 
 ```sh
 npm install
-cp .env.example .env   # fill in a real GITHUB_TOKEN
+cp .env.example .env   # optional: fill in GITHUB_TOKEN for higher limits
 npm run build
 ```
 

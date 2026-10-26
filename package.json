@@ -8,6 +8,7 @@
     "build": "tsc",
     "build:watch": "tsc --watch",
     "test": "npm run build && node --test \"tests/**/*.test.js\"",
+    "smoke:github": "npm run build && node scripts/smokeGithub.mjs",
     "smoke:registry": "npm run build && node scripts/smokeRegistry.mjs"
   },
   "dependencies": {

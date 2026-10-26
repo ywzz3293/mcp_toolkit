@@ -3,8 +3,16 @@ import assert from "node:assert/strict";
 import { searchGithub } from "../../dist/core/searchGithub.js";
 import { withMockedFetch, jsonResponse } from "../helpers.js";
 
-test("searchGithub throws when token is missing", async () => {
-  await assert.rejects(() => searchGithub("mcp", { token: "" }), /token/i);
+test("searchGithub omits Authorization when token is missing", async () => {
+  await withMockedFetch(
+    async (_url, options) => {
+      assert.equal(options.headers.Authorization, undefined);
+      return jsonResponse(200, { total_count: 0, items: [] });
+    },
+    async () => {
+      assert.deepEqual(await searchGithub("mcp", {}), { results: [], totalCount: 0 });
+    },
+  );
 });
 
 test("searchGithub returns empty results without throwing", async () => {
@@ -45,14 +53,23 @@ test("searchGithub maps repo fields and computes readmeUrl", async () => {
   );
 });
 
-test("searchGithub throws a clear error on 401 Unauthorized", async () => {
+test("searchGithub falls back to public search after an invalid token", async () => {
+  let callCount = 0;
   await withMockedFetch(
-    async () => jsonResponse(401, { message: "Bad credentials" }),
+    async (_url, options) => {
+      callCount++;
+      if (callCount === 1) {
+        assert.equal(options.headers.Authorization, "Bearer bad-token");
+        return jsonResponse(401, { message: "Bad credentials" });
+      }
+      assert.equal(options.headers.Authorization, undefined);
+      return jsonResponse(200, { total_count: 0, items: [] });
+    },
     async () => {
-      await assert.rejects(
-        () => searchGithub("mcp", { token: "bad-token" }),
-        /401|Unauthorized/i,
-      );
+      const result = await searchGithub("mcp", { token: "bad-token" });
+      assert.deepEqual(result.results, []);
+      assert.match(result.authWarning, /401.*without authentication/i);
+      assert.equal(callCount, 2);
     },
   );
 });
@@ -116,7 +133,7 @@ test("searchGithub exhausts retries on a persistent 429 and throws", async () =>
   );
 });
 
-test("searchGithub does not retry on 401 Unauthorized (single attempt)", async () => {
+test("searchGithub reports a failed public fallback after one invalid-token attempt", async () => {
   let callCount = 0;
   await withMockedFetch(
     async () => {
@@ -128,7 +145,7 @@ test("searchGithub does not retry on 401 Unauthorized (single attempt)", async (
         () => searchGithub("mcp", { token: "bad-token" }),
         /401|Unauthorized/i,
       );
-      assert.equal(callCount, 1);
+      assert.equal(callCount, 2);
     },
   );
 });

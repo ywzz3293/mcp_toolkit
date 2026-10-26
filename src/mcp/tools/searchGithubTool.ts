@@ -53,14 +53,19 @@ export function registerSearchGithubTool(server: McpServer): void {
       const callStart = performance.now();
       try {
         const { githubToken } = loadConfig();
-        const { results, totalCount } = await searchGithub(query, {
+        const { results, totalCount, authWarning } = await searchGithub(query, {
           token: githubToken,
           language,
           maxResults: max_results,
         });
-        const payload = JSON.stringify({ results, total_count: totalCount }, null, 2);
+        const payload = JSON.stringify(
+          { results, total_count: totalCount, ...(authWarning ? { auth_warning: authWarning } : {}) },
+          null,
+          2,
+        );
 
-        setCached(cacheKey, payload);
+        // Authentication status belongs to this request, not to a cached search result.
+        setCached(cacheKey, JSON.stringify({ results, total_count: totalCount }, null, 2));
         logCacheEvent({
           tool: "search_github_repos",
           cache: force_refresh ? "refresh" : "miss",

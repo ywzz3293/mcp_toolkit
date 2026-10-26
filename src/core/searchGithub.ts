@@ -11,10 +11,11 @@ export interface GithubRepoResult {
 export interface SearchGithubResult {
   results: GithubRepoResult[];
   totalCount: number;
+  authWarning?: string;
 }
 
 export interface SearchGithubOptions {
-  token: string;
+  token?: string;
   language?: string;
   maxResults?: number;
   timeoutMs?: number;
@@ -36,9 +37,11 @@ interface GithubSearchResponse {
   items: GithubSearchResponseItem[];
 }
 
+class InvalidTokenError extends Error {}
+
 async function attemptSearch(
   url: URL,
-  token: string,
+  token: string | undefined,
   timeoutMs: number,
 ): Promise<GithubSearchResponse> {
   const controller = new AbortController();
@@ -48,7 +51,7 @@ async function attemptSearch(
   try {
     response = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         Accept: "application/vnd.github+json",
         "User-Agent": "mcp-scout",
       },
@@ -65,14 +68,13 @@ async function attemptSearch(
   }
 
   if (response.status === 401) {
-    throw new Error(
-      "GitHub rejected the token (401 Unauthorized). Check that GITHUB_TOKEN is valid.",
-    );
+    if (token) throw new InvalidTokenError("GitHub rejected the token (401 Unauthorized).");
+    throw new Error("GitHub public search returned 401 Unauthorized.");
   }
   if (response.status === 403 || response.status === 429) {
     throw new RetryableError(
       `GitHub API rate limit or permission error (HTTP ${response.status}). ` +
-        "Wait a bit and try again, or check the token's scopes.",
+        "Wait a bit and try again, or check the token's permissions if configured.",
     );
   }
   if (response.status >= 500) {
@@ -91,16 +93,22 @@ export async function searchGithub(
 ): Promise<SearchGithubResult> {
   const { token, language, maxResults = 5, timeoutMs = DEFAULT_TIMEOUT_MS } = options;
 
-  if (!token) {
-    throw new Error("Missing GitHub token: searchGithub() requires options.token.");
-  }
-
   const q = language ? `${query} language:${language}` : query;
   const url = new URL(`${GITHUB_API_BASE}/search/repositories`);
   url.searchParams.set("q", q);
   url.searchParams.set("per_page", String(maxResults));
 
-  const data = await retry(() => attemptSearch(url, token, timeoutMs), RETRY_OPTIONS);
+  let data: GithubSearchResponse;
+  let authWarning: string | undefined;
+  try {
+    data = await retry(() => attemptSearch(url, token, timeoutMs), RETRY_OPTIONS);
+  } catch (err) {
+    if (!(err instanceof InvalidTokenError) || !token) throw err;
+    data = await retry(() => attemptSearch(url, undefined, timeoutMs), RETRY_OPTIONS);
+    authWarning =
+      "GitHub token was rejected (401); public search succeeded without authentication. " +
+      "Unauthenticated rate limits apply.";
+  }
 
   const results: GithubRepoResult[] = data.items.map((item) => ({
     fullName: item.full_name,
@@ -110,5 +118,5 @@ export async function searchGithub(
     readmeUrl: `https://raw.githubusercontent.com/${item.full_name}/HEAD/README.md`,
   }));
 
-  return { results, totalCount: data.total_count };
+  return { results, totalCount: data.total_count, ...(authWarning ? { authWarning } : {}) };
 }

@@ -18,9 +18,9 @@ function withoutToken(fn) {
   }
 }
 
-test("loadConfig throws when GITHUB_TOKEN is missing and no .env file exists", () => {
+test("loadConfig allows public GitHub search without a token", () => {
   withoutToken(() => {
-    assert.throws(() => loadConfig(MISSING_ENV_PATH), /GITHUB_TOKEN/);
+    assert.equal(loadConfig(MISSING_ENV_PATH).githubToken, undefined);
   });
 });
 

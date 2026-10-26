@@ -31,7 +31,7 @@ mcp-scout (stdio)
 
 ### `search_github_repos(query, language?, max_results=5)`
 
-Searches public GitHub repos via `/search/repositories`. Returns `{results: [...], total_count}`, with a `readme_url` on each result for chaining into `fetch_page`. Empty results return `[]`, not an error. Requires a GitHub token (`public_repo` scope is enough).
+Searches public GitHub repos via `/search/repositories`. Returns `{results: [...], total_count}`, with a `readme_url` on each result for chaining into `fetch_page`. Empty results return `[]`, not an error. A GitHub token is optional. If a configured token is rejected with HTTP 401, the tool retries once without authentication and includes `auth_warning` in a successful result. Public search has lower rate limits.
 
 ### `fetch_page(url)`
 
@@ -67,7 +67,7 @@ Invoke explicitly ("use the research-assistant subagent to research: ...") or le
 ## Setup
 
 1. `npm install`
-2. Copy `.env.example` to `.env` and fill in `GITHUB_TOKEN`
+2. Optionally copy `.env.example` to `.env` and fill in `GITHUB_TOKEN` for higher GitHub API limits
 3. `npm run build`
 4. `npm test` (unit tests, no network calls)
 
@@ -88,6 +88,8 @@ The script asks for `filesystem`, prints a compact candidate list, uses an in-me
 For a real AI client, use the [temporary Codex example](CLI_SETUP.md#phase-4-example-temporary-connection-no-global-config-edits). On 2026-09-20, an explicit Codex CLI tool call returned 5 Registry candidates; two natural-language CLI trials chose web search only. In a later interactive Codex conversation, the same natural-language request prompted a `search_mcp_servers` call with `query="filesystem"`, `max_results=3`, returning 3 candidates alongside web research. This demonstrates autonomous selection in that conversation, not guaranteed tool preference or that the final recommendation came from the Registry results. Phase 4 was then signed off by the user.
 
 For the original GitHub → README chain, use a known-stable query instead of picking a random one:
+
+Run `npm run smoke:github` to check that chain against live GitHub and Jina with a deliberately invalid test token. It uses an in-memory cache and prints no real credentials.
 
 ```
 search_github_repos(query: "modelcontextprotocol/typescript-sdk")
