@@ -1,14 +1,14 @@
 # mcp-scout
 
-> A local MCP server that lets AI editors (Cursor, Claude Code, Codex CLI) search GitHub, fetch web pages, and discover candidate MCP servers in the official Registry.
+> A local MCP server for research tools and GPU course-video transcription.
 
-**Status: Phase 4 Registry-search learning slice completed and signed off on 2026-09-20.** TypeScript, stdio transport, three tools, SQLite exact-match cache, unit tested, and connected to Cursor / Claude Code / Codex CLI. The Registry path has local stdio e2e coverage and a repeatable real-network smoke test. Phase 5 has not started.
+**Status:** The three research tools completed Phase 4 on 2026-09-20. A fourth, local GPU transcription tool was added on 2026-10-27. TypeScript and stdio transport are shared; the research tools use the SQLite exact-match cache.
 
 ---
 
 ## What it does
 
-Three MCP tools, callable by any MCP-compatible client over stdio:
+Four MCP tools, callable by any MCP-compatible client over stdio:
 
 ```
 AI editor (Cursor / Claude Code / Codex CLI)
@@ -18,7 +18,8 @@ mcp-scout (stdio)
     │
     ├── search_github_repos(query, language?, max_results=5)   → GitHub REST API
     ├── fetch_page(url)                                         → Jina Reader
-    └── search_mcp_servers(query, max_results=5)                → Official MCP Registry
+    ├── search_mcp_servers(query, max_results=5)                → Official MCP Registry
+    └── transcribe_local_video(path, start_seconds?, duration_seconds?) → local whisper.cpp CUDA
 ```
 
 **Current scope does not include** a knowledge base, notes/workspace search, a vector DB, a web UI, a semantic RAG pipeline, or a hosted service. It is a local stdio process. Those are possible future directions only if real usage justifies them; they are not part of the current product contract.
@@ -28,6 +29,12 @@ mcp-scout (stdio)
 ---
 
 ## Tools
+
+### `transcribe_local_video(path, start_seconds=0, duration_seconds=60)`
+
+Runs a 1 to 180 second segment of an existing local video or audio file through the sibling `course-study-gpu` project's `scripts/transcribe.py`. It returns SRT text with original-file timestamps, the saved transcript path, timing, detected language, and `cuda_verified`. The MCP server and the CUDA GPU must be on the same computer. Input paths must be absolute. It uses the locally installed FFmpeg, whisper.cpp CUDA build, and multilingual model; it does not download executables or models during a tool call.
+
+By default the project is expected at `../course-study-gpu` relative to this repository. Set `COURSE_STUDY_GPU_ROOT` to another absolute project directory, and optionally `COURSE_STUDY_PYTHON` to a Python executable. Follow that project's [README](../course-study-gpu/README.md) to prepare `tools/whisper/Release/whisper-cli.exe` and `models/ggml-base.bin`. The tool reports a setup error if they are missing. It does not expose the separate CPU baseline; use the project script directly for comparisons.
 
 ### `search_github_repos(query, language?, max_results=5)`
 

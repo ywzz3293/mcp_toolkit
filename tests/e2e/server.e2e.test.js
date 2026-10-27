@@ -134,7 +134,7 @@ test("stdio server lists and calls all registered tools through local fake upstr
     const listedTools = await client.listTools();
     assert.deepEqual(
       listedTools.tools.map((tool) => tool.name).sort(),
-      ["fetch_page", "search_github_repos", "search_mcp_servers"],
+      ["fetch_page", "search_github_repos", "search_mcp_servers", "transcribe_local_video"],
     );
 
     const searchResult = textPayload(

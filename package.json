@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Local MCP server for discovering MCP Registry candidates, searching GitHub, and fetching web pages.",
+  "description": "Local MCP server for research tools and GPU course-video transcription.",
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",

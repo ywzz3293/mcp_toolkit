@@ -10,6 +10,8 @@ npm run build
 
 With `dist/server.js` in place, configure your CLI below. Replace the absolute paths in the snippets with your local project path.
 
+For `transcribe_local_video`, run the MCP server on the computer with the NVIDIA GPU and the `course-study-gpu` project. Its default location is the sibling `../course-study-gpu` directory. If it lives elsewhere, add `COURSE_STUDY_GPU_ROOT` with that project's absolute path to the client's `env` map. The tool also needs Python, FFmpeg, `whisper-cli.exe`, and `models/ggml-base.bin` installed locally. The three research tools work without this GPU setup.
+
 ---
 
 ## Cursor
